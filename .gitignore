@@ -102,3 +102,7 @@ ENV/
 
 # dlib face landmark predictor
 .dat
+
+# music file
+.wav
+.mp3

@@ -1,4 +1,7 @@
 from scipy.spatial import distance as dist
+from threading import Thread
+import matplotlib.pyplot as plt
+import playsound
 import dlib
 import numpy as np
 import cv2
@@ -10,18 +13,32 @@ EYE_AR_CONSEC_FRAMES = 48
 COUNTER = 0
 ALARM_ON = False
 
+list_lenLimit = 150
+EAR_Tol = []
+
+'''
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(111)
+line, = plt.plot(EAR_Tol, 'b')
+'''
+
+def play_alarm(path):
+    # play the alarm sound from the given path
+    playsound.playsound(path)
+
+
 def eye_aspect_ratio(eye):
     # comput the euclidean distances between the two sets of
     # vartical eye landmarks( x, y)- coordinates
-
-    A = dist.euclidean(eye[1], eye[5])
-    B = dist.euclidean(eye[2], eye[4])
+    a = dist.euclidean(eye[1], eye[5])
+    b = dist.euclidean(eye[2], eye[4])
 
     # compute the suclidean distance between the horzontal
     # eye landmark (x, y)- coordinates
-    C = dist.euclidean(eye[0], eye[3])
+    c = dist.euclidean(eye[0], eye[3])
 
-    ear = (A + B) / (2 * C)
+    ear = (a + b) / (2 * c)
 
     return ear
 
@@ -67,6 +84,9 @@ while(video.isOpened()):
         rightEAR = eye_aspect_ratio(right_eye)
 
         avgEAR = (leftEAR + rightEAR) / 2.0
+        EAR_Tol.append(avgEAR)
+
+        #print(avgEAR)
 
         if avgEAR < EYE_AR_THRESH:
             COUNTER += 1
@@ -74,6 +94,13 @@ while(video.isOpened()):
             if COUNTER >= EYE_AR_CONSEC_FRAMES:
                 if not ALARM_ON:
                     ALARM_ON = True
+                    # check to see if an alarm file was supplied,
+                    # and if so, start a thread to have the alarm
+                    # sound played in the background
+                    t = Thread(target=play_alarm,
+                               args=('Alarm01.mav',))
+                    t.deamon = True
+                    t.start()
 
                 cv2.putText(frame, "DROWSINESS ALERT!", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
@@ -82,7 +109,15 @@ while(video.isOpened()):
             COUNTER = 0
             ALARM_ON = False
 
+    '''
+        plt.title('EAR')
+        plt.plot(EAR_Tol, 'b')
+    plt.pause(0.0001)
+    '''
     cv2.imshow('cam', frame)
+
+    if len(EAR_Tol) >= list_lenLimit:
+        EAR_Tol = EAR_Tol[-list_lenLimit:]
 
     k = cv2.waitKey(20)
 
@@ -93,3 +128,4 @@ while(video.isOpened()):
 
 video.release()
 cv2.destroyAllWindows()
+#plt.close()
