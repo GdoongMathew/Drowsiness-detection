@@ -25,6 +25,7 @@ line, = plt.plot(EAR_Tol, 'b')
 
 def play_alarm(path):
     # play the alarm sound from the given path
+    print(path)
     playsound.playsound(path)
 
 
@@ -98,7 +99,7 @@ while(video.isOpened()):
                     # and if so, start a thread to have the alarm
                     # sound played in the background
                     t = Thread(target=play_alarm,
-                               args=('Alarm01.mav',))
+                               args=('Alarm01.wav',))
                     t.deamon = True
                     t.start()
 
